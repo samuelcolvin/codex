@@ -1167,6 +1167,9 @@
             "model_catalog_in_context": {
               "type": "boolean"
             },
+            "monty_python": {
+              "type": "boolean"
+            },
             "multi_agent": {
               "type": "boolean"
             },
@@ -7816,6 +7819,9 @@
         "model_catalog_in_context": {
           "type": "boolean"
         },
+        "monty_python": {
+          "type": "boolean"
+        },
         "multi_agent": {
           "type": "boolean"
         },
@@ -8349,6 +8355,14 @@
         }
       ],
       "description": "Optional verbosity control for GPT-5 models (Responses API `text.verbosity`)."
+    },
+    "monty_binary": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AbsolutePathBuf"
+        }
+      ],
+      "description": "Path to the `monty` worker binary used by the `monty_python` feature. The `CODEX_MONTY_BINARY` environment variable overrides it; without either, `monty` is looked up on `PATH`."
     },
     "notice": {
       "allOf": [

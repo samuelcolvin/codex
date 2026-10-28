@@ -135,6 +135,8 @@ tracing = { workspace = true, features = ["log"] }
 url = { workspace = true }
 uuid = { workspace = true, features = ["serde", "v4", "v5", "v7"] }
 which = { workspace = true }
+monty-pool = { workspace = true }
+monty-types = { workspace = true }
 whoami = { workspace = true }
 
 # Build OpenSSL from source for musl builds.

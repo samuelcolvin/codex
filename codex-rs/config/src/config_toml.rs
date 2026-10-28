@@ -276,6 +276,11 @@ pub struct ConfigToml {
     /// sanctioned by Codex will likely degrade model performance.
     pub model_instructions_file: Option<AbsolutePathBuf>,
 
+    /// Path to the `monty` worker binary used by the `monty_python` feature.
+    /// The `CODEX_MONTY_BINARY` environment variable overrides it; without
+    /// either, `monty` is looked up on `PATH`.
+    pub monty_binary: Option<AbsolutePathBuf>,
+
     /// Compact prompt used for history compaction.
     pub compact_prompt: Option<String>,
 

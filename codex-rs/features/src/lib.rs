@@ -114,6 +114,9 @@ pub enum Feature {
     ViewImage,
     /// Allow registration of the built-in sleep tool.
     SleepTool,
+    /// Run Python in a pool of Monty sandbox workers: the `run_python` tool, plus
+    /// `exec_command` calls that only run an inline Python script.
+    MontyPython,
     /// Enable Claude-style lifecycle hooks loaded from hooks.json files.
     CodexHooks,
     /// Store CLI auth in the encrypted local secrets backend when keyring storage is selected.
@@ -1136,6 +1139,12 @@ pub const FEATURES: &[FeatureSpec] = &[
         key: "sleep_tool",
         stage: Stage::Stable,
         default_enabled: true,
+    },
+    FeatureSpec {
+        id: Feature::MontyPython,
+        key: "monty_python",
+        stage: Stage::UnderDevelopment,
+        default_enabled: false,
     },
     FeatureSpec {
         id: Feature::SecretAuthStorage,

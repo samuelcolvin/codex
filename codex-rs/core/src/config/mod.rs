@@ -1164,6 +1164,9 @@ pub struct Config {
     /// How the sleep tool is selected when its feature gate is enabled.
     pub sleep_tool_mode: SleepToolMode,
 
+    /// Explicit path to the `monty` worker binary for the `monty_python` feature.
+    pub monty_binary: Option<AbsolutePathBuf>,
+
     /// Centralized feature flags; source of truth for feature gating.
     pub features: ManagedFeatures,
 
@@ -4719,6 +4722,7 @@ impl Config {
             rollout_budget,
             current_time_reminder,
             sleep_tool_mode,
+            monty_binary: cfg.monty_binary.clone(),
             features,
             runtime_feature_defaults: BTreeMap::new(),
             suppress_unstable_features_warning: cfg
