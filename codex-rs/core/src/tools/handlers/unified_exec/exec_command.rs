@@ -40,6 +40,7 @@ use super::super::shell_spec::CommandToolOptions;
 use super::super::shell_spec::create_exec_command_tool_with_environment_id;
 use super::ExecCommandArgs;
 use super::ExecCommandWorkdirArgs;
+use super::monty_python::intercept_monty_python;
 use super::post_unified_exec_tool_use_payload;
 use super::preparation::ExecCommandLifetime;
 use super::preparation::ParsedExecCommand;
@@ -174,6 +175,7 @@ impl ExecCommandHandler {
             &turn_environment.selection.environment_id,
         )
         .await;
+        let native_cwd = parsed.native_cwd.clone();
         let prepared = parsed.prepare(self.lifetime)?;
         let max_output_tokens = prepared.max_output_tokens;
         let fs = prepared.turn_environment.environment.get_filesystem();
@@ -207,6 +209,19 @@ impl ExecCommandHandler {
                 hook_command: None,
                 tool_cwd: None,
             }));
+        }
+
+        if let Some(output) = intercept_monty_python(
+            &prepared,
+            native_cwd.as_deref(),
+            &session,
+            &step_context,
+            &tracker,
+            &call_id,
+        )
+        .await
+        {
+            return Ok(boxed_tool_output(output));
         }
 
         emit_unified_exec_tty_metric(&step_context.session_telemetry, prepared.tty);

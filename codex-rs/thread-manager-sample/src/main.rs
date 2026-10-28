@@ -393,6 +393,7 @@ async fn new_config(
         rollout_budget: None,
         current_time_reminder: None,
         sleep_tool_mode: Default::default(),
+        monty_binary: None,
         features: Default::default(),
         prefer_mxc: false,
 

@@ -20,6 +20,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 mod exec_command;
+mod monty_python;
 pub(crate) mod preparation;
 mod write_stdin;
 

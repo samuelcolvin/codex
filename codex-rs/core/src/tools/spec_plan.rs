@@ -24,6 +24,7 @@ use crate::tools::handlers::RequestPermissionsHandler;
 use crate::tools::handlers::RequestPluginInstallHandler;
 use crate::tools::handlers::RequestUserInputAsyncHandler;
 use crate::tools::handlers::RequestUserInputHandler;
+use crate::tools::handlers::RunPythonHandler;
 use crate::tools::handlers::SendMessageToUserAsyncHandler;
 use crate::tools::handlers::SleepHandler;
 use crate::tools::handlers::TestSyncHandler;
@@ -1405,6 +1406,10 @@ fn add_core_utility_tools(context: &CoreToolPlanContext<'_>, registry: &mut Tool
         }
     {
         registry.add(SleepHandler);
+    }
+
+    if features.enabled(Feature::MontyPython) {
+        registry.add(RunPythonHandler);
     }
 
     if tool_suggest_enabled(turn_context)
