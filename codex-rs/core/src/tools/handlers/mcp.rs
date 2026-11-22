@@ -99,7 +99,11 @@ impl McpHandlerDefinition {
 
 pub struct McpHandler {
     pub(crate) definition: Arc<McpHandlerDefinition>,
-    code_mode_tool_definitions: OnceLock<(Option<usize>, Vec<codex_code_mode::ToolDefinition>)>,
+    code_mode_tool_definitions: OnceLock<(
+        Option<usize>,
+        codex_code_mode::CodeModeLanguage,
+        Vec<codex_code_mode::ToolDefinition>,
+    )>,
 }
 
 #[cfg(test)]
@@ -377,19 +381,23 @@ impl CoreToolRuntime for McpHandler {
     fn cached_code_mode_definitions(
         &self,
         code_mode_input_schema_max_bytes: Option<usize>,
+        language: codex_code_mode::CodeModeLanguage,
     ) -> Option<&[codex_code_mode::ToolDefinition]> {
-        let (cached_budget, definitions) = self.code_mode_tool_definitions.get_or_init(|| {
-            let mut definitions = codex_tools::collect_code_mode_tool_definitions(
-                std::iter::once(self.definition.spec.as_ref()),
-                code_mode_input_schema_max_bytes,
-            );
-            for definition in &mut definitions {
-                definition.input_schema = None;
-                definition.output_schema = None;
-            }
-            (code_mode_input_schema_max_bytes, definitions)
-        });
-        (*cached_budget == code_mode_input_schema_max_bytes).then_some(definitions.as_slice())
+        let (cached_budget, cached_language, definitions) =
+            self.code_mode_tool_definitions.get_or_init(|| {
+                let mut definitions = codex_tools::collect_code_mode_tool_definitions_for_language(
+                    std::iter::once(self.definition.spec.as_ref()),
+                    code_mode_input_schema_max_bytes,
+                    language,
+                );
+                for definition in &mut definitions {
+                    definition.input_schema = None;
+                    definition.output_schema = None;
+                }
+                (code_mode_input_schema_max_bytes, language, definitions)
+            });
+        (*cached_budget == code_mode_input_schema_max_bytes && *cached_language == language)
+            .then_some(definitions.as_slice())
     }
 
     fn wait_until_ready<'a>(&'a self, session: &'a Arc<Session>) -> Option<BoxFuture<'a, ()>> {
@@ -957,17 +965,38 @@ mod tests {
         ));
 
         let first = handler
-            .cached_code_mode_definitions(/*code_mode_input_schema_max_bytes*/ None)
+            .cached_code_mode_definitions(
+                /*code_mode_input_schema_max_bytes*/ None,
+                codex_code_mode::CodeModeLanguage::JavaScript,
+            )
             .expect("MCP definitions should be cached");
         assert_eq!(first.len(), 1);
         assert!(first[0].input_schema.is_none());
         assert!(first[0].output_schema.is_none());
 
         let second = handler
-            .cached_code_mode_definitions(/*code_mode_input_schema_max_bytes*/ None)
+            .cached_code_mode_definitions(
+                /*code_mode_input_schema_max_bytes*/ None,
+                codex_code_mode::CodeModeLanguage::JavaScript,
+            )
             .expect("MCP definitions should be cached");
         assert!(std::ptr::eq(first, second));
-        assert!(handler.cached_code_mode_definitions(Some(32_000)).is_none());
+        assert!(
+            handler
+                .cached_code_mode_definitions(
+                    Some(32_000),
+                    codex_code_mode::CodeModeLanguage::JavaScript
+                )
+                .is_none()
+        );
+        assert!(
+            handler
+                .cached_code_mode_definitions(
+                    /*code_mode_input_schema_max_bytes*/ None,
+                    codex_code_mode::CodeModeLanguage::Python,
+                )
+                .is_none()
+        );
     }
 
     #[test]

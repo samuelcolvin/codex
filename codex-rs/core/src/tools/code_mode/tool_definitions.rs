@@ -10,17 +10,19 @@ pub(crate) fn prepare_code_mode_tool_definitions<'a>(
     runtime: Option<&'a dyn CoreToolRuntime>,
     spec: impl FnOnce() -> Cow<'a, ToolSpec>,
     code_mode_input_schema_max_bytes: Option<usize>,
+    language: codex_code_mode::CodeModeLanguage,
 ) -> Cow<'a, [ToolDefinition]> {
-    if let Some(definitions) = runtime
-        .and_then(|runtime| runtime.cached_code_mode_definitions(code_mode_input_schema_max_bytes))
-    {
+    if let Some(definitions) = runtime.and_then(|runtime| {
+        runtime.cached_code_mode_definitions(code_mode_input_schema_max_bytes, language)
+    }) {
         return Cow::Borrowed(definitions);
     }
 
     let spec = spec();
-    let mut definitions = codex_tools::collect_code_mode_tool_definitions(
+    let mut definitions = codex_tools::collect_code_mode_tool_definitions_for_language(
         std::iter::once(spec.as_ref()),
         code_mode_input_schema_max_bytes,
+        language,
     );
     for definition in &mut definitions {
         definition.input_schema = None;

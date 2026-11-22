@@ -79,6 +79,21 @@ pub struct CodeModeConfigToml {
     /// from the nested code-mode tool surface.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub direct_only_tool_namespaces: Option<Vec<String>>,
+    /// Language the model writes code-mode cells in. Defaults to JavaScript.
+    /// Experimental: `python` runs cells in Monty, a sandboxed Python interpreter.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language: Option<CodeModeLanguageToml>,
+    /// Path to the `monty` worker binary used when `language = "python"`.
+    /// `CODEX_MONTY_BINARY` takes precedence; without either, `monty` is looked up on PATH.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub monty_binary: Option<std::path::PathBuf>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum CodeModeLanguageToml {
+    Javascript,
+    Python,
 }
 
 impl FeatureConfig for CodeModeConfigToml {

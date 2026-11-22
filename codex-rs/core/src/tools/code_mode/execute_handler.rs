@@ -43,8 +43,11 @@ impl CodeModeExecuteHandler {
         code: String,
         telemetry: &mut CodeModeToolCallGuard,
     ) -> Result<CodeModeToolOutput, FunctionCallError> {
-        let args =
-            codex_code_mode::parse_exec_source(&code).map_err(FunctionCallError::RespondToModel)?;
+        let args = codex_code_mode::parse_exec_source_for_language(
+            &code,
+            step_context.turn.config.code_mode.language,
+        )
+        .map_err(FunctionCallError::RespondToModel)?;
         let exec = ExecContext {
             session,
             turn: Arc::clone(&step_context.turn),
@@ -60,6 +63,7 @@ impl CodeModeExecuteHandler {
                 cached_runtime.as_deref(),
                 || Cow::Borrowed(spec.as_ref()),
                 code_mode_input_schema_max_bytes,
+                step_context.turn.config.code_mode.language,
             );
             match definitions {
                 Cow::Borrowed(definitions) => enabled_tools.extend_from_slice(definitions),

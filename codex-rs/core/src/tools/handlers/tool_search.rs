@@ -258,6 +258,7 @@ impl ToolSearchHandler {
                     .config
                     .code_mode
                     .tool_input_schema_max_bytes,
+                step_context.turn.config.code_mode.language,
                 &indirect_prefixes,
             );
             return Ok(boxed_tool_output(JsonToolOutput::new(serde_json::json!({
@@ -285,6 +286,7 @@ impl ToolSearchHandler {
         limit: usize,
         router: &ToolRouter,
         code_mode_input_schema_max_bytes: Option<usize>,
+        language: codex_code_mode::CodeModeLanguage,
         indirect_prefixes: &IndirectNamespacePrefixes<'_>,
     ) -> Vec<CodeModeSearchResult> {
         let mut tools = Vec::new();
@@ -312,6 +314,7 @@ impl ToolSearchHandler {
                     tool.cached_runtime().map(Arc::as_ref),
                     || Cow::Owned(Arc::unwrap_or_clone(tool.spec())),
                     code_mode_input_schema_max_bytes,
+                    language,
                 );
                 let Some(definition) = definitions.iter().find(|definition| {
                     definition.tool_name.clone().with_default_namespace() == candidate_name
@@ -321,6 +324,12 @@ impl ToolSearchHandler {
                 let mut description = definition.description.clone();
                 indirect_prefixes
                     .apply_code_mode_description(&definition.tool_name, &mut description);
+                let name = match language {
+                    codex_code_mode::CodeModeLanguage::JavaScript => name,
+                    codex_code_mode::CodeModeLanguage::Python => {
+                        codex_code_mode::python_identifier(&name)
+                    }
+                };
                 tools.push(CodeModeSearchResult { name, description });
                 if tools.len() == limit {
                     return tools;
