@@ -2929,14 +2929,18 @@ dependencies = [
 name = "codex-code-mode-monty"
 version = "0.0.0"
 dependencies = [
+ "codex-code-mode",
  "codex-code-mode-protocol",
  "codex-protocol",
+ "hyper-util",
  "monty-pool",
  "monty-types",
  "pretty_assertions",
  "serde_json",
  "tokio",
  "tokio-util",
+ "tonic",
+ "tower",
  "tracing",
 ]
 

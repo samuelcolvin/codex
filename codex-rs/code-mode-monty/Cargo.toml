@@ -22,6 +22,10 @@ tokio-util = { workspace = true, features = ["rt"] }
 tracing = { workspace = true }
 
 [dev-dependencies]
+codex-code-mode = { workspace = true }
 codex-protocol = { workspace = true }
+hyper-util = { workspace = true }
+tonic = { workspace = true }
+tower = { version = "0.5.3", features = ["util"] }
 pretty_assertions = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "test-util"] }
+tokio = { workspace = true, features = ["macros", "process", "rt-multi-thread", "test-util"] }
