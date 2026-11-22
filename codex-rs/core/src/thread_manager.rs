@@ -698,7 +698,13 @@ impl ThreadManager {
             codex_apps_tools_cache,
         ));
         let code_mode_session_provider: Arc<dyn CodeModeSessionProvider> =
-            if config.features.enabled(Feature::CodeModeHost)
+            if config.code_mode.language == codex_code_mode::CodeModeLanguage::Python {
+                Arc::new(codex_code_mode_monty::MontyCodeModeSessionProvider::new(
+                    codex_code_mode_monty::resolve_monty_binary(
+                        config.code_mode.monty_binary.clone(),
+                    ),
+                ))
+            } else if config.features.enabled(Feature::CodeModeHost)
                 || config.code_mode.disable_in_process_fallback
             {
                 Self::process_code_mode_session_provider(

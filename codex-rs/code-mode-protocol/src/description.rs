@@ -192,10 +192,23 @@ pub struct ParsedExecSource {
 }
 
 pub fn parse_exec_source(input: &str) -> Result<ParsedExecSource, String> {
+    parse_exec_source_for_language(input, crate::CodeModeLanguage::JavaScript)
+}
+
+/// Splits an optional first-line pragma off `exec` input written in `language`.
+pub fn parse_exec_source_for_language(
+    input: &str,
+    language: crate::CodeModeLanguage,
+) -> Result<ParsedExecSource, String> {
+    let (pragma_prefix, language_name) = match language {
+        crate::CodeModeLanguage::JavaScript => (CODE_MODE_PRAGMA_PREFIX, "JavaScript"),
+        crate::CodeModeLanguage::Python => (crate::PYTHON_CODE_MODE_PRAGMA_PREFIX, "Python"),
+    };
     if input.trim().is_empty() {
-        return Err(
-            "exec expects raw JavaScript source text (non-empty). Provide JS only, optionally with first-line `// @exec: {\"yield_time_ms\": 10000, \"max_output_tokens\": 1000}`.".to_string(),
-        );
+        return Err(match language {
+            crate::CodeModeLanguage::JavaScript => "exec expects raw JavaScript source text (non-empty). Provide JS only, optionally with first-line `// @exec: {\"yield_time_ms\": 10000, \"max_output_tokens\": 1000}`.".to_string(),
+            crate::CodeModeLanguage::Python => "exec expects raw Python source text (non-empty). Provide Python only, optionally with first-line `# @exec: {\"yield_time_ms\": 10000, \"max_output_tokens\": 1000}`.".to_string(),
+        });
     }
 
     let mut args = ParsedExecSource {
@@ -208,14 +221,14 @@ pub fn parse_exec_source(input: &str) -> Result<ParsedExecSource, String> {
     let first_line = lines.next().unwrap_or_default();
     let rest = lines.next().unwrap_or_default();
     let trimmed = first_line.trim_start();
-    let Some(pragma) = trimmed.strip_prefix(CODE_MODE_PRAGMA_PREFIX) else {
+    let Some(pragma) = trimmed.strip_prefix(pragma_prefix) else {
         return Ok(args);
     };
 
     if rest.trim().is_empty() {
-        return Err(
-            "exec pragma must be followed by JavaScript source on subsequent lines".to_string(),
-        );
+        return Err(format!(
+            "exec pragma must be followed by {language_name} source on subsequent lines"
+        ));
     }
 
     let directive = pragma.trim();

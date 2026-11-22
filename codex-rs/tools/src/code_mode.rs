@@ -2,6 +2,7 @@ use crate::ResponsesApiNamespaceTool;
 use crate::ToolName;
 use crate::ToolOutputSchema;
 use crate::ToolSpec;
+use codex_code_mode::CodeModeLanguage;
 use codex_code_mode::CodeModeToolKind;
 use codex_code_mode::ToolDefinition as CodeModeToolDefinition;
 
@@ -10,11 +11,25 @@ pub fn augment_tool_spec_for_code_mode(
     spec: ToolSpec,
     code_mode_input_schema_max_bytes: Option<usize>,
 ) -> ToolSpec {
+    augment_tool_spec_for_code_mode_language(
+        spec,
+        code_mode_input_schema_max_bytes,
+        CodeModeLanguage::JavaScript,
+    )
+}
+
+/// Augment tool descriptions with exec samples written in `language`.
+pub fn augment_tool_spec_for_code_mode_language(
+    spec: ToolSpec,
+    code_mode_input_schema_max_bytes: Option<usize>,
+    language: CodeModeLanguage,
+) -> ToolSpec {
     match spec {
         ToolSpec::Function(mut tool) => {
             let Some(description) = augmented_description_for_spec(
                 &ToolSpec::Function(tool.clone()),
                 code_mode_input_schema_max_bytes,
+                language,
             ) else {
                 return ToolSpec::Function(tool);
             };
@@ -25,6 +40,7 @@ pub fn augment_tool_spec_for_code_mode(
             let Some(description) = augmented_description_for_spec(
                 &ToolSpec::Freeform(tool.clone()),
                 code_mode_input_schema_max_bytes,
+                language,
             ) else {
                 return ToolSpec::Freeform(tool);
             };
@@ -52,8 +68,10 @@ pub fn augment_tool_spec_for_code_mode(
                                 .as_ref()
                                 .map(ToolOutputSchema::to_value),
                         };
-                        tool.description =
-                            codex_code_mode::augment_tool_definition(definition).description;
+                        tool.description = codex_code_mode::augment_tool_definition_for_language(
+                            definition, language,
+                        )
+                        .description;
                     }
                     ResponsesApiNamespaceTool::Custom(tool) => {
                         let tool_name =
@@ -67,8 +85,10 @@ pub fn augment_tool_spec_for_code_mode(
                             input_schema_max_bytes: None,
                             output_schema: None,
                         };
-                        tool.description =
-                            codex_code_mode::augment_tool_definition(definition).description;
+                        tool.description = codex_code_mode::augment_tool_definition_for_language(
+                            definition, language,
+                        )
+                        .description;
                     }
                 }
             }
@@ -91,6 +111,19 @@ pub fn collect_code_mode_tool_definitions<'a>(
     specs: impl IntoIterator<Item = &'a ToolSpec>,
     code_mode_input_schema_max_bytes: Option<usize>,
 ) -> Vec<CodeModeToolDefinition> {
+    collect_code_mode_tool_definitions_for_language(
+        specs,
+        code_mode_input_schema_max_bytes,
+        CodeModeLanguage::JavaScript,
+    )
+}
+
+/// [`collect_code_mode_tool_definitions`] with declarations written in `language`.
+pub fn collect_code_mode_tool_definitions_for_language<'a>(
+    specs: impl IntoIterator<Item = &'a ToolSpec>,
+    code_mode_input_schema_max_bytes: Option<usize>,
+    language: CodeModeLanguage,
+) -> Vec<CodeModeToolDefinition> {
     let mut tool_definitions = specs
         .into_iter()
         .flat_map(|spec| {
@@ -108,7 +141,9 @@ pub fn collect_code_mode_tool_definitions<'a>(
             definitions
         })
         .filter(|definition| codex_code_mode::is_code_mode_nested_tool(&definition.name))
-        .map(codex_code_mode::augment_tool_definition)
+        .map(|definition| {
+            codex_code_mode::augment_tool_definition_for_language(definition, language)
+        })
         .collect::<Vec<_>>();
     tool_definitions.sort_by(|left, right| left.name.cmp(&right.name));
     tool_definitions.dedup_by(|left, right| left.name == right.name);
@@ -134,9 +169,12 @@ pub fn collect_code_mode_exec_prompt_tool_definitions<'a>(
 fn augmented_description_for_spec(
     spec: &ToolSpec,
     code_mode_input_schema_max_bytes: Option<usize>,
+    language: CodeModeLanguage,
 ) -> Option<String> {
     code_mode_tool_definition_for_spec(spec, code_mode_input_schema_max_bytes)
-        .map(codex_code_mode::augment_tool_definition)
+        .map(|definition| {
+            codex_code_mode::augment_tool_definition_for_language(definition, language)
+        })
         .map(|definition| definition.description)
 }
 

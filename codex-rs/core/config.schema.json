@@ -696,6 +696,18 @@
           "description": "Show handler duration, code-mode host duration, and harness overhead in each code-mode cell response. Experimental: this option and the response format may change or be removed.",
           "type": "boolean"
         },
+        "language": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/CodeModeLanguageToml"
+            }
+          ],
+          "description": "Language the model writes code-mode cells in. Defaults to JavaScript. Experimental: `python` runs cells in Monty, a sandboxed Python interpreter."
+        },
+        "monty_binary": {
+          "description": "Path to the `monty` worker binary used when `language = \"python\"`. `CODEX_MONTY_BINARY` takes precedence; without either, `monty` is looked up on PATH.",
+          "type": "string"
+        },
         "tool_input_schema_max_bytes": {
           "description": "Maximum UTF-8 bytes per rendered tool input type, with a 16,000-byte minimum and default. For ordinary MCP tools, this is also at least their server's explicitly configured input limit.",
           "format": "uint",
@@ -717,6 +729,13 @@
         }
       },
       "type": "object"
+    },
+    "CodeModeLanguageToml": {
+      "enum": [
+        "javascript",
+        "python"
+      ],
+      "type": "string"
     },
     "CodeModeToml": {
       "additionalProperties": false,

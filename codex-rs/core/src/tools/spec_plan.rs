@@ -680,9 +680,10 @@ fn spec_for_model_request(
             ))
             .is_some_and(|winner| winner == tool_name)
     {
-        codex_tools::augment_tool_spec_for_code_mode(
+        codex_tools::augment_tool_spec_for_code_mode_language(
             spec,
             turn_context.config.code_mode.tool_input_schema_max_bytes,
+            turn_context.config.code_mode.language,
         )
     } else {
         spec
@@ -1029,21 +1030,37 @@ fn register_code_mode_executors(
         && features.enabled(Feature::IncrementalTools)
         && features.enabled(Feature::IncrementalExecTools)
         && tool_mode == ToolMode::CodeModeOnly;
-    let (exec_description, exec_definitions) =
-        codex_code_mode::build_exec_tool_description_and_definitions(
-            &enabled_tools,
-            &deferred_tools,
-            &namespace_descriptions,
-            turn_context.config.code_mode.default_exec_yield_time_ms,
-            tool_mode == ToolMode::CodeModeOnly,
-            image_detail_visibility,
-            deferred_tool_discovery,
-            incremental_exec_enabled,
-            model_messages.code_mode(),
-        );
+    let language = turn_context.config.code_mode.language;
+    let (exec_description, exec_definitions) = match language {
+        codex_code_mode::CodeModeLanguage::JavaScript => {
+            codex_code_mode::build_exec_tool_description_and_definitions(
+                &enabled_tools,
+                &deferred_tools,
+                &namespace_descriptions,
+                turn_context.config.code_mode.default_exec_yield_time_ms,
+                tool_mode == ToolMode::CodeModeOnly,
+                image_detail_visibility,
+                deferred_tool_discovery,
+                incremental_exec_enabled,
+                model_messages.code_mode(),
+            )
+        }
+        // Model message overrides describe JavaScript, so Python ignores them.
+        codex_code_mode::CodeModeLanguage::Python => {
+            codex_code_mode::build_python_exec_tool_description_and_definitions(
+                &enabled_tools,
+                &namespace_descriptions,
+                turn_context.config.code_mode.default_exec_yield_time_ms,
+                tool_mode == ToolMode::CodeModeOnly,
+                image_detail_visibility,
+                deferred_tool_discovery,
+                incremental_exec_enabled,
+            )
+        }
+    };
     let exec_definitions = incremental_exec_enabled.then(|| Arc::new(exec_definitions));
     let execute_handler = CodeModeExecuteHandler::new(
-        create_code_mode_tool(exec_description),
+        create_code_mode_tool(exec_description, language),
         code_mode_nested_tool_specs,
     );
 

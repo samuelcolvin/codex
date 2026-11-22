@@ -1293,6 +1293,10 @@ pub struct CodeModeConfig {
     /// Keep code mode fail-closed when the standalone host is unavailable.
     pub disable_in_process_fallback: bool,
     pub heartbeat_interval_s: u32,
+    /// Language of `exec` cells; Python cells run in Monty.
+    pub language: codex_code_mode::CodeModeLanguage,
+    /// Configured `monty` worker binary for Python cells.
+    pub monty_binary: Option<PathBuf>,
 }
 
 impl Default for CodeModeConfig {
@@ -1305,6 +1309,8 @@ impl Default for CodeModeConfig {
             direct_only_tool_namespaces: Vec::new(),
             disable_in_process_fallback: false,
             heartbeat_interval_s: 0,
+            language: codex_code_mode::CodeModeLanguage::JavaScript,
+            monty_binary: None,
         }
     }
 }
@@ -2996,6 +3002,15 @@ fn resolve_code_mode_config(config_toml: &ConfigToml) -> CodeModeConfig {
             .as_ref()
             .and_then(|config| config.heartbeat_interval_s)
             .unwrap_or_default(),
+        language: match base.and_then(|config| config.language) {
+            Some(codex_features::CodeModeLanguageToml::Python) => {
+                codex_code_mode::CodeModeLanguage::Python
+            }
+            Some(codex_features::CodeModeLanguageToml::Javascript) | None => {
+                codex_code_mode::CodeModeLanguage::JavaScript
+            }
+        },
+        monty_binary: base.and_then(|config| config.monty_binary.clone()),
     }
 }
 
